@@ -1,5 +1,5 @@
 #!/bin/sh
-while getopts :f:g: option
+while getopts :f:g:k: option
 do
  case "${option}" in
  f) ARGOCD_REPO_URL=${OPTARG};;
