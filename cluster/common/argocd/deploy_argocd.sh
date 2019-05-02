@@ -1,21 +1,30 @@
 #!/bin/sh
-while getopts :f:g:k: option
+while getopts :f:g:h:k: option
 do
  case "${option}" in
  f) ARGOCD_REPO_URL=${OPTARG};;
+ h) ARGOCONFIG_REPO_URL=${OPTARG};;
  g) GITOPS_SSH_URL=${OPTARG};; 
  k) GITOPS_SSH_KEY=${OPTARG};;
  esac
 done
 
 KUBE_SECRET_NAME="argo-ssh" 
-ARGOCD_NAMESPACE="ARGOCD"
-REPO_DIR="ARGOCD"
+ARGOCD_NAMESPACE="argocd"
+REPO_DIR="argocd"
+CONFIG_DIR="argoConfig"
 
 rm -rf $REPO_DIR
 echo "Cloning ARGOCD $ARGOCD_REPO_URL"
 if ! git clone $ARGOCD_REPO_URL $REPO_DIR; then
     echo "ERROR: failed to clone $ARGOCD_REPO_URL"
+    exit 1
+fi
+
+rm -rf $CONFIG_DIR
+echo "Cloning ARGOCD $ARGOCCONFIG_REPO_URL"
+if ! git clone $ARGOCONFIG_REPO_URL $CONFIG_DIR; then
+    echo "ERROR: failed to clone $ARGOCONFIG_REPO_URL"
     exit 1
 fi
 
@@ -86,5 +95,6 @@ if ! kubectl create -f  $REPO_DIR/argo-cd/master/manifests/ha/install.yaml -n $A
     exit 1
 fi
 
+cd 
 
 echo "ARGOCD deployment complete"
