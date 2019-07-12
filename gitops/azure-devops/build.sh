@@ -69,7 +69,7 @@ function download_fab() {
     fi
     export fab_download=fab-$(date +%Y%m%d%H%M%S).zip
     wget -O $fab_download "https://github.com/Microsoft/fabrikate/releases/download/$VERSION_TO_DOWNLOAD/fab-v$VERSION_TO_DOWNLOAD-$os-amd64.zip"
-    rm -f fab
+    rm -rf fab
     unzip $fab_download -d fab
 
     export PATH=$PATH:$HOME/fab
