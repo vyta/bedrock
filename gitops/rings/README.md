@@ -2,11 +2,11 @@
 
 Ring deployment is a configuration on top of a service deployment that allows you to deploy *revisions* of the service alongside any existing instances of *that* service, and any other services. It allows you to control the "blast radius" of a change to a service by gradually rolling out new revisions of a microservice to production without the risk of affecting all end users.
 
-This README serves to explain a Ring based deployment using Fabrikate and Bedrock.
+This README serves to explain a Ring based deployment using [Fabrikate](https://github.com/microsoft/fabrikate) and Bedrock.
 
 **NOTE**: This pipeline is ideal for developers who want to practice Bedrock GitOps **without using a Service Mesh**. This approach will require that you have an application that replicates the behavior of a Service Mesh (e.g. [Ring Operator](https://github.com/microsoft/bedrock/tree/rings/gitops/rings#ring-operator)).
 
-The Ring workflow is shown in the following diagram, where you will see that it represents an extension to the [Bedrock CI/CD](https://github.com/microsoft/bedrock/tree/master/gitops).
+The Ring workflow is shown in the following diagram, where you see that it represents an extension to the [Bedrock CI/CD](https://github.com/microsoft/bedrock/tree/master/gitops).
 
 ![Ring Workflow](./images/ring-workflow.png)
 
@@ -16,11 +16,11 @@ In summary, there are three major changes made to the Bedrock CI/CD to account f
 2. Create Ring Path in the Source Repository
 3. Restructure the Cluster HLD Repository
 
-## Components of the Ringed Model
+## Components of the Ring Model
 
 ### Git Repositories
 
-Recall that in the official Bedrock CI/CD (without Rings), there exists three types of repositories: (1) Service Source Code (2) HLD and (3) the Materialized. In a Ringed Model,the same repositories exists as well. The following repositories are required in the Rings workflow:
+Recall that in the official Bedrock CI/CD (without Rings), there exists three types of repositories: (1) Service Source Code (2) HLD and (3) the Materialized. In a Ring Model,the same repositories exists as well. The following repositories are required in the Rings workflow:
 
 **Service Source Repository**: A git repository that maintains the source code of the service, a dockerfile, and a helm chart. Developers will commit regularly to this repository, with revisions and rings being tracked in Git branches.
 
@@ -101,9 +101,9 @@ The ring.yaml is consumed by a custom resource controller, which we call the Rin
 
 **DISCLAIMER:** Bedrock does *not* provide an open-sourced "Ring Operator", or any tool that can manage ingress routes to a specific service. We are in the process of developing and open-sourcing a "Ring Operator" soon.
 
-## Adding a Service
+## Adding a Service to the Ring Model
 
-It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in the Ring Models, the Cluster HLD repository is structured in the following way:
+It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in the Ring Model, the Cluster HLD repository is structured in the following way:
 
 **Cluster HLD Repository**:
  * ServiceA
