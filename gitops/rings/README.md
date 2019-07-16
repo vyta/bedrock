@@ -10,10 +10,11 @@ The Ring workflow is shown in the following diagram, where you will see that it 
 
 ![Ring Workflow](./images/ring-workflow.png)
 
-In summary, there are two major changes made to the Bedrock CI/CD to account for this Rings implementation:
+In summary, there are three major changes made to the Bedrock CI/CD to account for this Rings implementation:
 
-1. Restructuring of the Cluster HLD Repo
-2. The addition of the Ring.yaml
+1. Add ring.yaml (template) to Helm Charts
+2. Create Ring Path in the Source Repository
+3. Restructure the Cluster HLD Repository
 
 ## Components of the Ringed Model
 
@@ -31,10 +32,46 @@ For all services represented by git repositories, we assume three more repositor
 
 **“Materialized” Manifest Repository**: this git repository acts as our canonical source of truth for Flux – the in-cluster component that pulls and applies Kubernetes manifests rendered from the Cluster HLD repository.
 
-### Ring.yaml
-As a ring is considered to be strictly a revision of a microservice, we need a way to configure the ingress controller to route to the microservice revision a user belongs to. We achieve this by providing a `ring.yaml` file in our helm chart, which is an abstraction on Kubernetes and Traefik primitives.
+### Ring Yaml
+As a ring is considered to be strictly a revision of a microservice, we need a way to configure the ingress controller to route to the microservice revision a user belongs to. We achieve this by providing a `ring.yaml` in our helm chart, which is an abstraction on Kubernetes and Traefik primitives.
 
-An example of ring.yaml:
+An example of the `ring.yaml`:
+
+```yaml
+# Source: hello-ring/templates/ring.yaml
+apiVersion: rings.microsoft.com/v1alpha1
+kind: Ring
+metadata:
+  name: {{.Values.serviceName}}-{{.Values.majorVersion}}-{{ .Values.ringName }}
+  contact: {{ .Values.contact }}
+  branchName: {{ .Values.branchName }} # Set by pipeline
+  buildId: {{ .Values.buildId }} # Set by pipeline
+  buildDate: {{ .Values.buildDate }} # Set by pipeline
+  commitId: {{ .Values.commitId }} # Set by pipeline
+spec:
+  # Deploy to environment
+  deploy: {{ .Values.deploy }}
+  entryPoints:
+    # Source of traffic (eg: 80 or 443)
+    - http
+    - https
+    - internal
+  routing:
+    service: {{ .Values.serviceName }}
+    version: {{ .Values.majorVersion }}
+    branch: {{ .Values.branch }}
+    group: {{ .Values.group }}
+    ports:
+      {{- range .Values.application.ports }}
+      - {{ . }}
+      {{- end }}
+    initialUsers:
+      {{- range .Values.initialUsers }}
+      - {{ . }}
+      {{- end }}
+```
+
+The `ring.yaml` will consume values from the `values.yaml` (if present), and most importantly, from the `common.yaml` that is created and held in the ring path of the Service Source repo. The `common.yaml` should be configured to add or modify an existing ring. An example of the Ring `common.yaml`:
 
 ```yaml
 config:
@@ -45,7 +82,7 @@ config:
   contact: admin@hellorings.com
 ```
 
-The `ring.yaml` pairs with a `deployment.yaml` within the helm chart of your `src` repository as follows:
+A `ring` folder in the Source repo should be created to store the `common.yaml` and a `component.yaml`, as shown:
 
 **Source Repository**:
  * ring
@@ -57,7 +94,7 @@ The `ring.yaml` pairs with a `deployment.yaml` within the helm chart of your `sr
    * ..
  * azure-pipelines.yaml
 
-The `selector` field of your `ring.yaml` should match the `spec.selector.matchLabels` of the `deployment.yaml` file. This is because a "Ring Operator" will create the service that matches the labels on the `deployment.yaml`, and once the Ring is created, it knows to map to a specific version of a service and ingress routes based on these `selector` labels, and will control access control to the service.
+ The `component.yaml` will source the Helm Chart Repo for the service, and the `common.yaml` will provide the values to the `ring.yaml`.
 
 ### Ring Operator
 The ring.yaml is consumed by a custom resource controller, which we call the Ring Controller. The Ring Controller sets up two resources on the cluster that map traffic to the proper service revision: a Traefik Ingress Route that maps path and headers to a Kubernetes service, and a Kubernetes service that maps to the microservice deployment.
@@ -66,7 +103,7 @@ The ring.yaml is consumed by a custom resource controller, which we call the Rin
 
 ## Adding a Service
 
-It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in this Ring Models, the Cluster HLD repository is structured in the following way:
+It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in the Ring Models, the Cluster HLD repository is structured in the following way:
 
 **Cluster HLD Repository**:
  * ServiceA
@@ -93,8 +130,11 @@ subcomponents:
   source: ring-operator
 ```
 
-When adding a new Service to the Rings CI/CD, the developer will need to:
-  1. Add a new path (folder) in the Cluster HLD Repo that corresponds to that service. The path should include a `component.yaml` that sources the serivce and all of its rings (branches):
+Each service or microservice is a subcomponent, and is mapped to a service path/folder in the HLD repo (e.g. `source: hello-rings`).
+
+When adding a new service to the Rings workflow, the developer will need to:
+  1. Update the **root** `component.yaml` by adding a new subcomponent for the service.
+  2. Add a new path (folder) in the Cluster HLD Repo that associates to that service. The folder should include a `component.yaml` that sources the serivce and all of its rings (git branches):
 
   ```yaml
   name: hello-rings
@@ -113,9 +153,6 @@ When adding a new Service to the Rings CI/CD, the developer will need to:
     path: ring
     branch: featureb
   ```
-  In the `component.yaml`, we use a path based selector to identify where in the source code repository the Helm chart exists.
-
-  2. Update the **root** `component.yaml` by adding a new subcomponent for the service.
 
 ## Creating a New Ring for a Service
 
@@ -140,5 +177,6 @@ When the pull request is merged by a developer into the `master` branch of the C
 ## References
 
 - Service Source Repo: https://github.com/bnookala/hello-rings
+- Helm Chart Repo: https://github.com/bnookala/hello-rings-helm
 - Cluster HLD Repo: https://github.com/bnookala/hello-rings-cluster-v2
 - Materialized Manifest Repo: https://github.com/bnookala/hello-rings-cluster-materialized
