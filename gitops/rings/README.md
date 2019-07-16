@@ -2,25 +2,25 @@
 
 Ring deployment is a configuration on top of a service deployment that allows you to deploy *revisions* of the service alongside any existing instances of *that* service, and any other services. It allows you to control the "blast radius" of a change to a service by gradually rolling out new revisions of a microservice to production without the risk of affecting all end users.
 
-This README serves to explain a Ring based deployment using [Fabrikate](https://github.com/microsoft/fabrikate) and Bedrock.
+This README serves to explain a ring based deployment using [Fabrikate](https://github.com/microsoft/fabrikate) and Bedrock.
 
 **NOTE**: This pipeline is ideal for developers who want to practice Bedrock GitOps **without using a Service Mesh**. This approach will require that you have an application that replicates the behavior of a Service Mesh (e.g. [Ring Operator](https://github.com/microsoft/bedrock/tree/rings/gitops/rings#ring-operator)).
 
-The Ring workflow is shown in the following diagram, where you see that it represents an extension to the [Bedrock CI/CD](https://github.com/microsoft/bedrock/tree/master/gitops).
+The ring workflow is shown in the following diagram, where you see that it represents an extension to the [Bedrock CI/CD](https://github.com/microsoft/bedrock/tree/master/gitops).
 
 ![Ring Workflow](./images/ring-workflow.png)
 
-In summary, there are three major changes made to the Bedrock CI/CD to account for this Rings implementation:
+In summary, there are three major changes made to the Bedrock CI/CD to account for this rings implementation:
 
 1. Add ring.yaml (template) to Helm Charts
-2. Create Ring Path in the Source Repository
+2. Create ring path in the Source Repository
 3. Restructure the Cluster HLD Repository
 
 ## Components of the Ring Model
 
 ### Git Repositories
 
-Recall that in the official Bedrock CI/CD (without Rings), there exists three types of repositories: (1) Service Source Code (2) HLD and (3) the Materialized. In a Ring Model,the same repositories exists as well. The following repositories are required in the Rings workflow:
+Recall that in the official Bedrock CI/CD (without rings), there exists three types of repositories: (1) Service Source Code (2) HLD and (3) the Materialized. In a ring model,the same repositories exists as well. The following repositories are required in the rings workflow:
 
 **Service Source Repository**: A git repository that maintains the source code of the service, a dockerfile, and a helm chart. Developers will commit regularly to this repository, with revisions and rings being tracked in Git branches.
 
@@ -35,7 +35,7 @@ For all services represented by git repositories, we assume three more repositor
 ### Ring Yaml
 As a ring is considered to be strictly a revision of a microservice, we need a way to configure the ingress controller to route to the microservice revision a user belongs to. We achieve this by providing a `ring.yaml` in our helm chart, which is an abstraction on Kubernetes and Traefik primitives.
 
-An example of the `ring.yaml`:
+An example of the `ring.yaml` template:
 
 ```yaml
 # Source: hello-ring/templates/ring.yaml
@@ -71,7 +71,7 @@ spec:
       {{- end }}
 ```
 
-The `ring.yaml` will consume values from the `values.yaml` (if present), and most importantly, from the `common.yaml` that is created and held in the ring path of the Service Source repo. The `common.yaml` should be configured to add or modify an existing ring. An example of the Ring `common.yaml`:
+The `ring.yaml` will consume values from the `values.yaml` (if present), and most importantly, from the `common.yaml` that is created and held in the ring path of the Service Source repo. The `common.yaml` should be configured to modify the ring specs of the `ring.yaml`. An example of the ring `common.yaml`:
 
 ```yaml
 config:
@@ -85,10 +85,10 @@ config:
 A `ring` folder in the Source repo should be created to store the `common.yaml` and a `component.yaml`, as shown:
 
 **Source Repository**:
- * ring
+ * **ring**
    * config
-       * common.yaml
-   * component.yaml
+       * **common.yaml**
+   * **component.yaml**
  * src
    * Dockerfile
    * ..
@@ -103,7 +103,7 @@ The ring.yaml is consumed by a custom resource controller, which we call the Rin
 
 ## Adding a Service to the Ring Model
 
-It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in the Ring Model, the Cluster HLD repository is structured in the following way:
+It is very common to manage multiple services or microservices in Bedrock, and in order to account for that in the ring model, the Cluster HLD repository is structured in the following way:
 
 **Cluster HLD Repository**:
  * ServiceA
@@ -132,7 +132,7 @@ subcomponents:
 
 Each service or microservice is a subcomponent, and is mapped to a service path/folder in the HLD repo (e.g. `source: hello-rings`).
 
-When adding a new service to the Rings workflow, the developer will need to:
+When adding a new service to the rings workflow, the developer will need to:
   1. Update the **root** `component.yaml` by adding a new subcomponent for the service.
   2. Add a new path (folder) in the Cluster HLD Repo that associates to that service. The folder should include a `component.yaml` that sources the serivce and all of its rings (git branches):
 
@@ -156,7 +156,7 @@ When adding a new service to the Rings workflow, the developer will need to:
 
 ## Creating a New Ring for a Service
 
-This section will assist in understanding the order of operations of a Ringed Model. However, if you want a step-by-step guide on implementing Rings, please visit the [Rings Implementation Guide](./RingsImplementation.md)
+This section will assist in understanding the order of operations of a ring model. However, if you want a step-by-step guide on implementing rings, please visit the [Rings Implementation Guide](./RingsImplementation.md)
 
 ### 1. Create a New Branch
 
@@ -164,11 +164,11 @@ To create a revision of the microservice that can deploy alongside existing inst
 
 ### 2. Image Tag Release Pipeline
 
-The [Image Tag Release Pipeline](https://github.com/microsoft/bedrock/blob/rings/gitops/azure-devops/ImageTagRelease.md), which is a core component of the Bedrock CI/CD workflow,will acknowledge the creation of a new Ring when a git branch is created. Like any other commit, it will trigger the build for the Image Tag Release process. Recall that this will execute a Build Pipeline to build and push a Docker image using the new image tag. Then, it will initiate the Release pipeline, where a Pull Request will be created to (1) have Fabrikate update the image tag (along with other metadata) in the **service Fabrikate definitions** (e.g. config/common.yaml), (2) add a new subcomponent (via `fab add` command) to the **service** `component.yaml` (shown below).
+The [Image Tag Release Pipeline](https://github.com/microsoft/bedrock/blob/rings/gitops/azure-devops/ImageTagRelease.md), which is a core component of the Bedrock CI/CD workflow,will acknowledge the creation of a new ring when a git branch is created. Like any other commit, it will trigger the build for the Image Tag Release process. Recall that this will execute a Build Pipeline to build and push a Docker image using the new image tag. Then, it will initiate the Release pipeline, where a Pull Request will be created to (1) have Fabrikate update the image tag (along with other metadata) in the **service Fabrikate definitions** (e.g. config/common.yaml), (2) add a new subcomponent (via `fab add` command) to the **service** `component.yaml` (shown below).
 
 ### 3. Merge Pull Request against Service HLD Repo
 
-A developer on a project must manually engage a Pull Request merge in order to gate access for a Ring to production.
+A developer on a project must manually engage a Pull Request merge in order to gate access for a ring to production.
 
 ### 4. Manifest Generation Pipeline
 
