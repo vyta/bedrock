@@ -10,10 +10,10 @@ The Ring workflow is shown in the following diagram, where you will see that it 
 
 ![Ring Workflow](./images/ring-workflow.png)
 
-In summary, there are two additions made to the Bedrock CI/CD to account for this Rings implementation:
+In summary, there are two major changes made to the Bedrock CI/CD to account for this Rings implementation:
 
-1. Cluster HLD Repo
-2. Ring.yaml
+1. Restructuring of the Cluster HLD Repo
+2. The addition of the Ring.yaml
 
 ## Components of the Ringed Model
 
@@ -37,21 +37,12 @@ As a ring is considered to be strictly a revision of a microservice, we need a w
 An example of ring.yaml:
 
 ```yaml
-serviceName: "languages"
-majorVersion: "v1"
-ringName: "48883-add-search"
-group: "CMS-CORE"
-contact: cms-core-dl@contoso.com
-branch: feature/48883-add-search
-initialUsers:
-  - bill@contoso.com
-  - ted@contoso.com
-deploy: true
-
-application:
-  replicaCount: 10
-  ports:
-    - 8080
+config:
+  serviceName: "hello-rings"
+  majorVersion: "v1"
+  ringName: "master"
+  group: "CORE"
+  contact: admin@hellorings.com
 ```
 
 The `ring.yaml` pairs with a `deployment.yaml` within the helm chart of your `src` repository as follows:
