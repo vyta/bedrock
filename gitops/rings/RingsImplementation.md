@@ -29,7 +29,7 @@ steps:
 - checkout: self
   persistCredentials: true
   clean: true
-  
+
 - task: Docker@2
   inputs:
     containerRegistry: '<name_of_the_service_connection_to_ACR_registry>'
@@ -261,7 +261,7 @@ When you push a new branch, a pull request should be open for that ring against 
 
 The Service HLD to Cluster HLD pipeline is intended to modify some config settings in the cluster HLD such as build ID, build time etc. which will be propagated into the materialized manifest via the next pipeline. You can configure what variables you'd like to modify in the cluster HLD, depending on if the helm charts are configured to take some very specific ones.
 
-Add a new build pipeline for the service HLD and place in it the following code: 
+Add a new build pipeline for the service HLD and place in it the following code:
 
 ```yaml
 trigger:
@@ -289,11 +289,11 @@ steps:
     get_fab_version
     download_fab
     git_connect
-    
+
     if ! git checkout $BRANCH_NAME; then
       git checkout -b $BRANCH_NAME
     fi
-    
+
     fab set --subcomponent $SERVICE_NAME.$SERVICE_NAME-$BRANCH_NAME buildId=$NUMBER
 
     git add -A
@@ -315,13 +315,13 @@ steps:
     SERVICE_NAME: $(SERVICE_NAME)
 ```
 
-It requires you have the following pipeline variables set: 
+It requires you have the following pipeline variables set:
 
 - `ACCESS_TOKEN`: Set this to a personal access token that has write access to your repository
 - `CLUSTER_REPO`: Set this to the cluster HLD URL, such as https://github.com/bnookala/hello-rings-cluster
 - `SERVICE_NAME`: Set this to the name of the service that is modified by this HLD, in this example, `hello-rings`
 
-Try running the build and you should be able to see a build ID modified in the cluster HLD repo for this particular service. This should kick off the next pipeline, the cluster to materialized manifest, which is described in detail below. 
+Try running the build and you should be able to see a build ID modified in the cluster HLD repo for this particular service. This should kick off the next pipeline, the cluster to materialized manifest, which is described in detail below.
 
 
 ### Cluster HLD to Materialized Manifest
