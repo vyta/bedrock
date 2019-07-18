@@ -52,43 +52,46 @@ jobs:
       git_connect
 
       # extract branch name and build # from the full subcomponent
-      branch_name=$(Build.SourceBranchName)
+      branch=$(Build.SourceBranchName)
       build_id=$(Build.BuildId)
       repo_name=$(Build.Repository.Name)
       repo="${repo_name#*/}"
 
       # run 'fab remove' to remove ring
       echo "FAB REMOVE"
-      fab remove $repo-$branch_name
-      # need to specify the subcomponent as an environment variable (e.g. "hello-rings-featurea")
+      cd $SERVICE
+      #fab remove $COMPONENT
+      fab remove $repo-$branch
+      # need to specify the subcomponent as an environment variable(e.g. "hello-rings-featurea") if not in the formate 'service-branch'
 
       echo "GIT ADD"
       git add -A
 
-      pr_branch_name="PR-ring-removal-$branch_name-$build_id"
-      git checkout -b $pr_branch_name
+      pr_branch="PR-ring-removal-$branch-$build_id"
+      git checkout -b $pr_branch
 
       # set git identity
       git config user.email "admin@azuredevops.com"
       git config user.name "Automated Account"
 
       echo "GIT COMMIT"
-      git commit -m "Deleting ring $branch_name"
+      git commit -m "Deleting ring $branch"
 
       echo "GIT PUSH"
       git_push
 
       # create pull request using hub
       export GITHUB_TOKEN=$ACCESS_TOKEN_SECRET
-      hub version
-      hub pull-request -m "Removing RING $branch_name"
+      hub pull-request -m "Removing RING $branch"
     displayName: 'Remove Subcomponent'
 ```
 
-The following pipeline variables are required for the Azure DevOps Build:
+The following pipeline variables are required for the Azure DevOps build:
 
 ```
 ACCESS_TOKEN_SECRET: the personal access token to access the source and HLD repository
-REPO: the service HLD repository
+REPO: the Cluster HLD repository
 SRC_REPO: the application source repository
+SERVICE: the name of the serice
+COMPONENT: the name of the component (or ring) to remove
 ```
